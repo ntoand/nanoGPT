@@ -1,4 +1,3 @@
-
 # nanoGPT
 
 ![nanoGPT](assets/nanogpt.jpg)
@@ -24,6 +23,161 @@ Dependencies:
 -  `tiktoken` for OpenAI's fast BPE code <3
 -  `wandb` for optional logging <3
 -  `tqdm` for progress bars <3
+
+## Docker Deployment
+
+To build and run the Docker container:
+
+1. Build the Docker image with a specific tag:
+```bash
+# Build with latest tag
+docker build -t nanogpt:latest .
+
+# Or build with a specific version tag
+docker build -t nanogpt:v1.0.0 .
+```
+
+2. Run with a single GPU:
+```bash
+# Using latest tag
+docker run --gpus all nanogpt:latest
+
+# Or using specific version
+docker run --gpus all nanogpt:v1.0.0
+```
+
+3. Run with multiple GPUs (e.g., 8 GPUs):
+```bash
+# Using latest tag
+docker run --gpus all nanogpt:latest torchrun --nproc_per_node=8 train.py config/train_gpt2.py
+
+# Or using specific version
+docker run --gpus all nanogpt:v1.0.0 torchrun --nproc_per_node=8 train.py config/train_gpt2.py
+```
+
+4. Run with multiple nodes (example):
+```bash
+# On the first (master) node:
+docker run --gpus all nanogpt:latest torchrun --nproc_per_node=8 --nnodes=2 --node_rank=0 --master_addr=<MASTER_IP> --master_port=1234 train.py config/train_gpt2.py
+
+# On the worker node:
+docker run --gpus all nanogpt:latest torchrun --nproc_per_node=8 --nnodes=2 --node_rank=1 --master_addr=<MASTER_IP> --master_port=1234 train.py config/train_gpt2.py
+```
+
+Note: When using the Helm chart, make sure to update the image tag in `values.yaml` to match your Docker image tag.
+
+## Kubernetes Deployment with Helm
+
+To deploy nanoGPT on Kubernetes using the provided Helm chart:
+
+### Prerequisites
+- Kubernetes cluster with GPU nodes
+- Kubeflow installed with PyTorchJob operator
+- Helm 3 installed
+- NVIDIA device plugin installed
+- Kai-scheduler (optional, for advanced scheduling)
+
+### Installation
+
+1. Navigate to the helm directory:
+```bash
+cd helm
+```
+
+2. Install the chart with default settings (will prepare Shakespeare character dataset):
+```bash
+helm install nanogpt ./nanogpt
+```
+
+3. Install with custom dataset preparation:
+```bash
+# Prepare Shakespeare dataset
+helm install nanogpt ./nanogpt \
+  --set dataPrep.dataset=shakespeare
+
+# Prepare OpenWebText dataset
+helm install nanogpt ./nanogpt \
+  --set dataPrep.dataset=openwebtext
+
+# Force prepare dataset even if files exist
+helm install nanogpt ./nanogpt \
+  --set dataPrep.dataset=shakespeare_char \
+  --set dataPrep.forcePrepare=true
+
+# Skip data preparation
+helm install nanogpt ./nanogpt \
+  --set dataPrep.enabled=false
+```
+
+4. Install with custom training configuration:
+```bash
+helm install nanogpt ./helm/nanogpt \
+  --set pytorchJob.workerReplicas=8 \
+  --set pytorchJob.gpusPerWorker=1 \
+  --set persistence.size=500Gi \
+  --set pytorchJob.config.args[2]="config/train_shakespeare_char.py"
+```
+
+5. Install with kai-scheduler (for advanced scheduling):
+```bash
+helm install nanogpt ./helm/nanogpt \
+  --set pytorchJob.scheduler.enabled=true \
+  --set pytorchJob.schedulerConfig.nodeSelector.key=node-type \
+  --set pytorchJob.schedulerConfig.nodeSelector.value=gpu-node
+```
+
+### Available Datasets
+The Helm chart supports the following datasets:
+- `shakespeare_char`: Character-level Shakespeare dataset
+- `shakespeare`: Word-level Shakespeare dataset
+- `openwebtext`: OpenWebText dataset
+
+### Monitoring
+
+1. Check job status:
+```bash
+kubectl get pytorchjobs
+```
+
+2. Check pods:
+```bash
+kubectl get pods
+```
+
+3. View logs:
+```bash
+# View training logs
+kubectl logs -f <pod-name> -c pytorch
+
+# View data preparation logs
+kubectl logs -f <pod-name> -c data-prep
+```
+
+### Configuration
+
+The Helm chart supports various configurations through `values.yaml`:
+
+- Dataset preparation settings:
+  - `dataPrep.enabled`: Enable/disable data preparation
+  - `dataPrep.dataset`: Dataset to prepare
+  - `dataPrep.forcePrepare`: Force data preparation
+- Training configuration:
+  - Number of worker replicas
+  - GPUs per worker
+  - Resource limits and requests
+  - Training command and arguments
+- Scheduler configuration:
+  - `pytorchJob.scheduler`: Scheduler type (default or kai-scheduler)
+  - `pytorchJob.schedulerConfig`: Scheduler-specific configuration
+    - Node selectors
+    - Resource requirements
+    - Scheduling policies
+- Persistent volume settings:
+  - Storage size
+  - Storage class
+  - Access mode
+
+See `helm/nanogpt/values.yaml` for all available options.
 
 ## quick start
 

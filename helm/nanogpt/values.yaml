@@ -1,0 +1,78 @@
+# Global settings
+image:
+  repository: nanogpt
+  tag: latest
+  pullPolicy: IfNotPresent
+
+scheduler:
+  enabled: false
+  name: kai-scheduler
+  queue: um-gpu-medium
+
+# Persistent Volume settings
+persistence:
+  enabled: true
+  # Storage class for PVC
+  storageClass: "standard"
+  # Size of the PVC
+  size: 100Gi
+  # Access mode for PVC
+  accessMode: ReadWriteMany
+  # Mount path inside the container
+  mountPath: /app/data
+
+# Data preparation settings
+dataPrep:
+  enabled: true
+  # Dataset to prepare (options: shakespeare_char, shakespeare, openwebtext)
+  dataset: "shakespeare_char"
+  # Dataset configuration
+  datasetConfig:
+    shakespeare_char:
+      prepareScript: data/shakespeare_char/prepare.py
+      outputFiles:
+        - /app/data/shakespeare_char/train.bin
+        - /app/data/shakespeare_char/val.bin
+    shakespeare:
+      prepareScript: data/shakespeare/prepare.py
+      outputFiles:
+        - /app/data/shakespeare/train.bin
+        - /app/data/shakespeare/val.bin
+    openwebtext:
+      prepareScript: data/openwebtext/prepare.py
+      outputFiles:
+        - /app/data/openwebtext/train.bin
+        - /app/data/openwebtext/val.bin
+  forcePrepare: false  # Set to true to force data preparation even if files exist
+
+# PyTorchJob settings
+pytorchJob:
+  name: nanogpt-training
+  namespace: default
+  # Number of worker replicas
+  workerReplicas: 1
+  # Number of GPUs per worker
+  gpusPerWorker: 1
+  # Resources for each worker
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+  # Training configuration
+  config:
+    # Command to run
+    command: ["torchrun"]
+    args:
+      - "--nproc_per_node=1"
+      - "train.py"
+      - "config/train_shakespeare_char.py"
+    # Environment variables
+    env:
+      - name: OMP_NUM_THREADS
+        value: "1"
+      - name: NCCL_DEBUG
+        value: "INFO"
+      - name: NCCL_IB_DISABLE
+        value: "1"
