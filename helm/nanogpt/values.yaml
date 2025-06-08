@@ -1,7 +1,7 @@
 # Global settings
 image:
-  repository: nanogpt
-  tag: latest
+  repository: ntoand/nanogpt
+  tag: v1.0.1
   pullPolicy: IfNotPresent
 
 scheduler:
@@ -13,9 +13,9 @@ scheduler:
 persistence:
   enabled: true
   # Storage class for PVC
-  storageClass: "standard"
+  storageClass: nfs-csi
   # Size of the PVC
-  size: 100Gi
+  size: 10Gi
   # Access mode for PVC
   accessMode: ReadWriteMany
   # Mount path inside the container
@@ -25,7 +25,7 @@ persistence:
 dataPrep:
   enabled: true
   # Dataset to prepare (options: shakespeare_char, shakespeare, openwebtext)
-  dataset: "shakespeare_char"
+  dataset: shakespeare_char
   # Dataset configuration
   datasetConfig:
     shakespeare_char:
@@ -48,7 +48,7 @@ dataPrep:
 # PyTorchJob settings
 pytorchJob:
   name: nanogpt-training
-  namespace: default
+  namespace: app-nanogpt
   # Number of worker replicas
   workerReplicas: 1
   # Number of GPUs per worker

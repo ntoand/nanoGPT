@@ -31,37 +31,37 @@ To build and run the Docker container:
 1. Build the Docker image with a specific tag:
 ```bash
 # Build with latest tag
-docker build -t nanogpt:latest .
+docker build -t <account>/nanogpt:latest .
 
 # Or build with a specific version tag
-docker build -t nanogpt:v1.0.0 .
+docker build -t <account>/nanogpt:v1.0.0 .
 ```
 
 2. Run with a single GPU:
 ```bash
 # Using latest tag
-docker run --gpus all nanogpt:latest
+docker run --gpus all <account>/nanogpt:latest
 
 # Or using specific version
-docker run --gpus all nanogpt:v1.0.0
+docker run --gpus all <account>/nanogpt:v1.0.0
 ```
 
 3. Run with multiple GPUs (e.g., 8 GPUs):
 ```bash
 # Using latest tag
-docker run --gpus all nanogpt:latest torchrun --nproc_per_node=8 train.py config/train_gpt2.py
+docker run --gpus all <account>/nanogpt:latest torchrun --nproc_per_node=8 train.py config/train_gpt2.py
 
 # Or using specific version
-docker run --gpus all nanogpt:v1.0.0 torchrun --nproc_per_node=8 train.py config/train_gpt2.py
+docker run --gpus all <account>/nanogpt:v1.0.0 torchrun --nproc_per_node=8 train.py config/train_gpt2.py
 ```
 
 4. Run with multiple nodes (example):
 ```bash
 # On the first (master) node:
-docker run --gpus all nanogpt:latest torchrun --nproc_per_node=8 --nnodes=2 --node_rank=0 --master_addr=<MASTER_IP> --master_port=1234 train.py config/train_gpt2.py
+docker run --gpus all <account>/nanogpt:latest torchrun --nproc_per_node=8 --nnodes=2 --node_rank=0 --master_addr=<MASTER_IP> --master_port=1234 train.py config/train_gpt2.py
 
 # On the worker node:
-docker run --gpus all nanogpt:latest torchrun --nproc_per_node=8 --nnodes=2 --node_rank=1 --master_addr=<MASTER_IP> --master_port=1234 train.py config/train_gpt2.py
+docker run --gpus all <account>/nanogpt:latest torchrun --nproc_per_node=8 --nnodes=2 --node_rank=1 --master_addr=<MASTER_IP> --master_port=1234 train.py config/train_gpt2.py
 ```
 
 Note: When using the Helm chart, make sure to update the image tag in `values.yaml` to match your Docker image tag.
